@@ -1,0 +1,15 @@
+﻿<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:MauiApp2.Converters"
+             x:Class="MauiApp2.App">
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <local:NullToBoolConverter x:Key="NullToBoolConverter" />
+            <local:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter" />
+            <local:BoolToColorConverter x:Key="BoolToColorConverter" />
+            <local:InverseBoolConverter x:Key="InverseBoolConverter" />
+            <local:SelectedTermColorConverter x:Key="SelectedTermColorConverter" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

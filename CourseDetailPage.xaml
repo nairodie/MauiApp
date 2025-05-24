@@ -1,0 +1,148 @@
+﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:MauiApp2.ViewModels"
+             xmlns:local="clr-namespace:MauiApp2"
+             x:Class="MauiApp2.CourseDetailPage"
+             xmlns:converters="clr-namespace:MauiApp2.Converters"
+             xmlns:models="clr-namespace:MauiApp2.Models"
+             Title="Course Details"
+             x:DataType="viewmodels:CourseDetailViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="15">
+            <!-- Course Title Section -->
+            <Frame BorderColor="Gray" CornerRadius="8" Padding="15" Margin="0,10">
+                <VerticalStackLayout Spacing="15">
+                    <Entry Text="{Binding SelectedCourse.CourseName}" Placeholder="Enter Course Title" FontSize="20"  FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                    <Grid ColumnSpacing="20">
+                        <Grid.ColumnDefinitions> <ColumnDefinition Width="*" /> <ColumnDefinition Width="*" /> </Grid.ColumnDefinitions>
+                        <!-- Start Date -->
+                        <VerticalStackLayout Grid.Column="0"> <Label Text="Start Date" /> <DatePicker Date="{Binding SelectedCourse.Start, Mode=TwoWay}" />
+                            <Label Text="{Binding StartDateError}" TextColor="Red" FontSize="12" IsVisible="{Binding StartDateError, Converter={StaticResource NullToBoolConverter}}" />
+                        </VerticalStackLayout>
+                        <!-- End Date -->
+                        <VerticalStackLayout Grid.Column="1"> <Label Text="End Date" /> <DatePicker Date="{Binding SelectedCourse.End, Mode=TwoWay}" />
+                            <Label Text="{Binding EndDateError}" TextColor="Red" FontSize="12" IsVisible="{Binding EndDateError, Converter={StaticResource NullToBoolConverter}}" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <!-- Status Picker -->
+                    <VerticalStackLayout>
+                        <Label Text="Status" /> <Picker ItemsSource="{Binding StatusValues}" SelectedItem="{Binding SelectedCourse.Status}" Title="Select Status" />
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Course Details Section -->
+            <Frame BorderColor="LightGray" CornerRadius="8" Padding="10" HasShadow="True">
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="Course Details" FontAttributes="Bold" FontSize="Medium"  TextColor="Black" HorizontalOptions="Center" />
+                    <Editor Text="{Binding CourseDetails}" Placeholder="Enter details..." AutoSize="TextChanges" MinimumHeightRequest="100" FontSize="14" BackgroundColor="White" TextColor="Black" HorizontalOptions="FillAndExpand" PlaceholderColor="Gray" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Instructor Info -->
+            <Frame BorderColor="Gray" CornerRadius="8" Padding="10">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Course Instructor Info" FontAttributes="Bold" FontSize="Medium" />
+                    <Entry Text="{Binding Instructor.Name}" Placeholder="Name" />
+                    <Label Text="{Binding InstructorNameError}" TextColor="Red" FontSize="12" IsVisible="{Binding InstructorNameError, Converter={StaticResource NullToBoolConverter}}" />
+                    <Entry Text="{Binding Instructor.Phone}" Placeholder="Phone" />
+                    <Label Text="{Binding InstructorPhoneError}" TextColor="Red" FontSize="12" IsVisible="{Binding InstructorPhoneError, Converter={StaticResource NullToBoolConverter}}" />
+                    <Entry Text="{Binding Instructor.Email}" Placeholder="Email" Keyboard="Email" />
+                    <Label Text="{Binding InstructorEmailError}" TextColor="Red" FontSize="12" IsVisible="{Binding InstructorEmailError, Converter={StaticResource NullToBoolConverter}}" />
+                </VerticalStackLayout>
+            </Frame>
+            
+            <!-- Notifications -->
+            <Frame BorderColor="Gray" CornerRadius="8" Padding="12" Margin="0,10,0,0">
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="📅 Notifications" FontSize="Medium" FontAttributes="Bold" />
+                    <!-- Start Notification -->
+                    <Grid ColumnSpacing="10"> <Grid.ColumnDefinitions> <ColumnDefinition Width="*" /> <ColumnDefinition Width="*" /> </Grid.ColumnDefinitions>
+                        <VerticalStackLayout Grid.Column="0"> <Label Text="Start Notification" FontSize="12" /> 
+                            <Picker ItemsSource="{Binding NotificationValues}" SelectedItem="{Binding SelectedCourse.StartNotification}" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1"> <Label Text="End Notification" FontSize="12" /> 
+                            <Picker ItemsSource="{Binding NotificationValues}" SelectedItem="{Binding SelectedCourse.EndNotification}" />
+                        </VerticalStackLayout>
+                    </Grid>                   
+                </VerticalStackLayout>
+            </Frame>
+
+            <Frame BorderColor="DarkGray" CornerRadius="10" Padding="15" Margin="0,10,0,20">
+                <VerticalStackLayout Spacing="15"> <Label Text="Assessments" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" />
+                    <!-- Two-column grid layout -->
+                    <Grid ColumnSpacing="20"> <Grid.ColumnDefinitions> <ColumnDefinition Width="*" /> <ColumnDefinition Width="*" /> </Grid.ColumnDefinitions>
+                        <!-- Performance -->
+                        <VerticalStackLayout Grid.Column="0" Spacing="10"> 
+                            <Label Text="Performance Assessment" FontSize="18" FontAttributes="Bold" />
+                            <Label Text="Name" />
+                            <Entry Text="{Binding PerformanceAssessment.Name, Mode=TwoWay}" Placeholder="Performance Name" />
+                            
+                            <Label Text="Due Date" /> <DatePicker Date="{Binding PerformanceAssessment.DueDate, Mode=TwoWay}" />
+                            <Label Text="{Binding AssessmentDueDateError}" TextColor="Red" FontSize="12" IsVisible="{Binding AssessmentDueDateError, Converter={StaticResource NullToBoolConverter}}" />
+                            
+                            <Label Text="Start Date" /> <DatePicker Date="{Binding PerformanceAssessment.Start, Mode=TwoWay}" />                            
+                            <Label Text="End Date" /> <DatePicker Date="{Binding PerformanceAssessment.End, Mode=TwoWay}" />
+                            <Label Text="{Binding AssessmentEndDateError}" TextColor="Red" FontSize="12" IsVisible="{Binding AssessmentEndDateError, Converter={StaticResource NullToBoolConverter}}" />
+                            
+                            <Label Text="Notify Before Start" FontSize="12" /> <Picker ItemsSource="{Binding NotificationValues}" SelectedItem="{Binding PerformanceAssessment.StartNotification}" />
+                            <Label Text="Notify Before End" FontSize="12" /> <Picker ItemsSource="{Binding NotificationValues}" SelectedItem="{Binding PerformanceAssessment.EndNotification}" />
+                        </VerticalStackLayout>
+                        
+                        <!-- Objective -->
+                        <VerticalStackLayout Grid.Column="1" Spacing="10">
+                            <Label Text="Objective Assessment" FontSize="18" FontAttributes="Bold" />
+                            <Label Text="Name" /> <Entry Text="{Binding ObjectiveAssessment.Name, Mode=TwoWay}" Placeholder="Objective Name" />
+                            <Label Text="Due Date" /> <DatePicker Date="{Binding ObjectiveAssessment.DueDate, Mode=TwoWay}" />
+                            <Label Text="{Binding AssessmentDueDateError}" TextColor="Red" FontSize="12" IsVisible="{Binding AssessmentDueDateError, Converter={StaticResource NullToBoolConverter}}" />
+                            <Label Text="Start Date" /><DatePicker Date="{Binding ObjectiveAssessment.Start, Mode=TwoWay}" />
+                            <Label Text="End Date" /> <DatePicker Date="{Binding ObjectiveAssessment.End, Mode=TwoWay}" />
+                            <Label Text="{Binding AssessmentEndDateError}" TextColor="Red" FontSize="12" IsVisible="{Binding AssessmentEndDateError, Converter={StaticResource NullToBoolConverter}}" />
+                            <Label Text="Notify Before Start" FontSize="12" />
+                            <Picker ItemsSource="{Binding NotificationValues}" SelectedItem="{Binding ObjectiveAssessment.StartNotification}" />
+                            <Label Text="Notify Before End" FontSize="12" />
+                            <Picker ItemsSource="{Binding NotificationValues}" SelectedItem="{Binding ObjectiveAssessment.EndNotification}" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Notes Section -->
+            <VerticalStackLayout Spacing="10" Padding="10">
+                <Label Text="Notes:" FontAttributes="Bold" FontSize="16" />
+                <Editor Text="{Binding NewNote.Content, Mode=TwoWay}" Placeholder="Enter notes..." AutoSize="TextChanges" MinimumHeightRequest="100" />
+                <!-- Saved Notes -->
+                <Label Text="Saved Notes:" FontAttributes="Bold" FontSize="16" IsVisible="{Binding Notes.Count, Converter={StaticResource CountToBoolConverter}}" />
+                <HorizontalStackLayout Spacing="15" Margin="0,10,0,0" HorizontalOptions="Center"> <Button Text="Save Note" Command="{Binding SaveNoteCommand}" IsEnabled="{Binding NewNote.Content, Converter={StaticResource NullToBoolConverter}}" BackgroundColor="LightGreen" TextColor="White" CornerRadius="5" WidthRequest="140" />
+                 <Button Text="Share Notes" Command="{Binding ShareNotesCommand}" BackgroundColor="DodgerBlue" TextColor="White" CornerRadius="5" WidthRequest="140" />
+                </HorizontalStackLayout>
+                
+                <Frame Padding="0" Margin="0" IsVisible="{Binding Notes.Count, Converter={StaticResource CountToBoolConverter}}" HasShadow="False" BackgroundColor="Transparent" BorderColor="Transparent">
+                    <CollectionView ItemsSource="{Binding Notes}" Margin="0,5,0,0" EmptyView="No notes available" SelectionMode="None">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:Note">
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions> <ColumnDefinition Width="*" /> <ColumnDefinition Width="Auto" /> </Grid.ColumnDefinitions>
+                                <Frame Grid.Column="0" Padding="15" Margin="5" BorderColor="{AppThemeBinding Light=Gray, Dark=#424242}" CornerRadius="10" BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2D2D2D}">
+                                    <Label Text="{Binding Content}" LineBreakMode="WordWrap" FontSize="14"  TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                                    </Frame>
+                                    <Button Grid.Column="1" Text="✕" Command="{Binding Source={RelativeSource AncestorType={x:Type local:CourseDetailPage}}, Path=BindingContext.DeleteNoteCommand}" CommandParameter="{Binding}"
+                                            BackgroundColor="Transparent" TextColor="Crimson" FontSize="14" WidthRequest="30" HeightRequest="30" HorizontalOptions="Center" VerticalOptions="Start" Padding="0" Margin="0,5,0,0" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </Frame>                
+            </VerticalStackLayout>
+            
+            <!-- Buttons -->
+            <HorizontalStackLayout Spacing="15" Margin="0,20,0,20" HorizontalOptions="Center">
+                <Button Text="Save Course Changes" Command="{Binding SaveCourseCommand}" IsEnabled="{Binding IsDateRangeValid}" BackgroundColor="MediumSeaGreen" TextColor="White" CornerRadius="10" WidthRequest="160" />
+                <Button Text="Delete Course" Command="{Binding DeleteCourseCommand}" BackgroundColor="Crimson" TextColor="White" FontAttributes="Bold" CornerRadius="10" WidthRequest="140" />
+            </HorizontalStackLayout>            
+            <Button Text="Clear All Notifications" Command="{Binding ClearAllNotificationsCommand}" BackgroundColor="Gray" TextColor="White" CornerRadius="8 "/>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp2.MainPage"
+             x:Name="MainPageRoot"
+             xmlns:converters="clr-namespace:MauiApp2.Converters">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <!-- Button style -->
+            <Style TargetType="Button" x:Key="StandardButton">
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="CornerRadius" Value="10" />
+                <Setter Property="HeightRequest" Value="40" />
+                <Setter Property="TextColor" Value="White" />
+                <Setter Property="Margin" Value="8" />
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="25" Padding="20">
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="DarkGray" HeightRequest="40" HorizontalOptions="Center" />
+
+            <!-- Terms Collection -->
+            <Button Text="Create New Term" Command="{Binding CreateTermCommand}" BackgroundColor="DarkBlue" TextColor="White" />
+            <CollectionView ItemsSource="{Binding Terms}" ItemsLayout="HorizontalList" SelectionMode="Single" SelectedItem="{Binding SelectedTerm, Mode=TwoWay}" HeightRequest="60" FlowDirection="LeftToRight">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Padding="10" Margin="5" BorderColor="DarkGray" CornerRadius="10" BackgroundColor="{Binding ., Converter={StaticResource SelectedTermColorConverter}, ConverterParameter={x:Reference MainPageRoot}}">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding BindingContext.SelectTermCommand, Source={x:Reference MainPageRoot}}" CommandParameter="{Binding}" />
+                            </Frame.GestureRecognizers>
+                            <Label Text="{Binding TermName}" TextColor="Black" FontAttributes="Bold" FontSize="16" HorizontalOptions="Center" />
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>               
+            </CollectionView>
+
+            <!-- Selected Term Info -->
+            <Entry Text="{Binding SelectedTerm.TermName, Mode=TwoWay}" FontSize="28" FontAttributes="Bold" HorizontalTextAlignment="Center" Placeholder="Enter Term Title" MaxLength="50" ClearButtonVisibility="WhileEditing" Margin="10,5" />
+
+            <!-- Start/End Date -->
+            <HorizontalStackLayout Spacing="20" VerticalOptions="Center">
+                <VerticalStackLayout>
+                    <Label Text="Start" HorizontalTextAlignment="Center" FontSize="14" />
+                    <DatePicker Date="{Binding SelectedTerm.Start, Mode=TwoWay}" WidthRequest="120" />
+                    <Label Text="{Binding TermStartDateError}" TextColor="Red" FontSize="12" IsVisible="{Binding TermStartDateError, Converter={StaticResource NullToBoolConverter}}" />
+                </VerticalStackLayout>
+
+                <VerticalStackLayout>
+                    <Label Text="End" HorizontalTextAlignment="Center" FontSize="14" />
+                    <DatePicker Date="{Binding SelectedTerm.End, Mode=TwoWay}" WidthRequest="120" />
+                    <Label Text="{Binding TermEndDateError}" TextColor="Red" FontSize="12" IsVisible="{Binding TermEndDateError, Converter={StaticResource NullToBoolConverter}}" />
+                    <Label Text="{Binding TermDateError}" TextColor="Red" FontSize="12" IsVisible="{Binding TermDateError, Converter={StaticResource NullToBoolConverter}}" />
+                </VerticalStackLayout>
+
+                <Button Text="Save" Command="{Binding SaveTermCommand}" IsEnabled="{Binding IsTermDirty}" BackgroundColor="MediumSeaGreen" Style="{StaticResource StandardButton}" WidthRequest="80" />
+            </HorizontalStackLayout>
+
+            <!-- Courses -->
+            <CollectionView ItemsSource="{Binding Courses}" SelectedItem="{Binding SelectedCourse, Mode=TwoWay}" ItemsLayout="VerticalList" VerticalScrollBarVisibility="Never" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame CornerRadius="12" Padding="5" Margin="10,5" HasShadow="True" BorderColor="LightGray" BackgroundColor="White">
+                            <Button Text="{Binding CourseName}" FontSize="18" HeightRequest="60" BackgroundColor="DarkBlue"
+                                    Command="{Binding BindingContext.OpenCourseDetailCommand, Source={x:Reference MainPageRoot}}" CommandParameter="{Binding}" />
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Actions -->
+            <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="Center" AlignItems="Center" Margin="0,10,0,10" BindableLayout.ItemsSource="{Binding ButtonActions}">
+                <Button Text="Add Course" Command="{Binding AddCourseCommand}" IsVisible="{Binding ShowAddCourseButton}" BackgroundColor="{Binding CanAddCourse, Converter={StaticResource BoolToColorConverter}}" 
+                        Style="{StaticResource StandardButton}" WidthRequest="120" />
+
+                <Button Text="Delete Term" Command="{Binding DeleteTermCommand}" IsEnabled="{Binding CanDeleteSelectedTerm}" BackgroundColor="Crimson" Style="{StaticResource StandardButton}" WidthRequest="120" />
+            </FlexLayout>
+
+            <Label Text="You can only add up to 6 courses per term." FontSize="12" TextColor="Gray" HorizontalTextAlignment="Center"
+                   IsVisible="{Binding CanAddCourse, Converter={StaticResource InverseBoolConverter}}" />
+
+            <!-- Reset Button -->
+            <Button Text="Reset App" Command="{Binding ResetAppCommand}" BackgroundColor="SlateGray" Style="{StaticResource StandardButton}" HorizontalOptions="Center" WidthRequest="140" Margin="0,0,0,20" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
