@@ -163,17 +163,7 @@ namespace MauiApp2.ViewModels
             ResetAppCommand = new Command(async () => await ResetAppAsync());
             RefreshTermData = async () => await LoadTermData(SelectedTerm.TermId);
             CreateTermCommand = new Command(async () => await CreateNewTermAsync());
-        }
-
-        private async void OnLogin()
-        {
-            LoginError = string.Empty;
-
-            if (Username == "admin" && Password == "password")
-            {
-
-            }
-        }
+        }      
 
         private async Task ResetAppAsync()
         {

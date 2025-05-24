@@ -15,6 +15,7 @@ namespace MauiApp2.Services
         public IAssessmentRepository AssessmentRepository { get; } = assessmentRepository;
         public IInstructorRepository InstructorRepository { get; } = instructorRepository;
         public INoteRepository NoteRepository { get; } = noteRepository;
+        public IUserRepository UserRepository => throw new NotImplementedException();
 
         public async Task CreateTablesAsync()
         {
