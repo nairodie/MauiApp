@@ -18,6 +18,9 @@ namespace MauiApp2.ViewModels
         private readonly Func<Task>? _refreshAssessments;
         private Instructor? _previousInstructor;
         private bool _disposed;
+        public NotesViewModel NotesVM { get; }
+        public InstructorViewModel InstructorVM { get; }
+
 
         public Term Term { get; }
         public ObservableCollection<Assessment> Assessments { get; } = new();
@@ -168,7 +171,6 @@ namespace MauiApp2.ViewModels
                 Text = allNotes
             });
         }
-
         private bool CanShareNotes() => Notes.Any(n => !string.IsNullOrWhiteSpace(n.Content));
 
         [RelayCommand]
@@ -185,25 +187,29 @@ namespace MauiApp2.ViewModels
         {
             await SetBusyAsync(async () =>
             {
-                await _notificationService.CancelNotificationAsync();
+                var startId = SelectedCourse.CourseId * 10 + 1;
+                var endId = SelectedCourse.CourseId * 10 + 2;
+
+                await _notificationService.CancelNotificationAsync(startId);
+                await _notificationService.CancelNotificationAsync(endId);
             });
         }
 
-        public CourseDetailViewModel(Course course, Term term, Instructor instructor, IEnumerable<Assessment> assessments, IEnumerable<Note> notes, IDatabaseService databaseService, Assessment? performanceAssessment, 
+        public CourseDetailViewModel(NotesViewModel notesVM, InstructorViewModel instructorVM, Course course, Term term, Instructor instructor, IEnumerable<Assessment> assessments, IEnumerable<Note> notes, IDatabaseService databaseService, Assessment? performanceAssessment, 
             Assessment? objectiveAssessment, Interfaces.INotificationService notifications, Func<Task>? refreshCallback, Func<Task>? refreshCourses = null, Func<Task>? refreshAssessments = null)
         {
+            NotesVM = notesVM;
+            InstructorVM = instructorVM;
+
+
             _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
             _notificationService = notifications ?? throw new ArgumentNullException(nameof(notifications));
             _refreshCallback = refreshCallback;
             _refreshAssessments = refreshAssessments;
-
             selectedCourse = course;
             Term = term;
             instructor = instructor;
-            
-
-            courseDetails = course.courseDetails;
-
+            courseDetails = course.CourseDetails;
             Assessments = new ObservableCollection<Assessment>(assessments);
             Notes = new ObservableCollection<Note>(notes);
             newNote = new Note();
@@ -782,5 +788,9 @@ namespace MauiApp2.ViewModels
             OnPropertyChanged(nameof(assessmentEndDateError));
         }
 
+        public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

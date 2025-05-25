@@ -1,6 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using SQLite;
-using System.ComponentModel;
 
 namespace MauiApp2.Models
 {

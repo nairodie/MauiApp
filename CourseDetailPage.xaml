@@ -45,12 +45,12 @@
             <Frame BorderColor="Gray" CornerRadius="8" Padding="10">
                 <VerticalStackLayout Spacing="10">
                     <Label Text="Course Instructor Info" FontAttributes="Bold" FontSize="Medium" />
-                    <Entry Text="{Binding Instructor.Name}" Placeholder="Name" />
-                    <Label Text="{Binding InstructorNameError}" TextColor="Red" FontSize="12" IsVisible="{Binding InstructorNameError, Converter={StaticResource NullToBoolConverter}}" />
-                    <Entry Text="{Binding Instructor.Phone}" Placeholder="Phone" />
-                    <Label Text="{Binding InstructorPhoneError}" TextColor="Red" FontSize="12" IsVisible="{Binding InstructorPhoneError, Converter={StaticResource NullToBoolConverter}}" />
-                    <Entry Text="{Binding Instructor.Email}" Placeholder="Email" Keyboard="Email" />
-                    <Label Text="{Binding InstructorEmailError}" TextColor="Red" FontSize="12" IsVisible="{Binding InstructorEmailError, Converter={StaticResource NullToBoolConverter}}" />
+                    <Entry Text="{Binding InstructorVM.Name}" Placeholder="Name" />
+                    <Label Text="{Binding InstructorVM.Errors}" TextColor="Red" FontSize="12" IsVisible="{Binding InstructorVM.Errors, Converter={StaticResource NullToBoolConverter}}" />
+                    <Entry Text="{Binding InstructorVM.Phone}" Placeholder="Phone" />
+                    <Label Text="{Binding InstructorVM.Errors}" TextColor="Red" FontSize="12" IsVisible="{Binding InstructorVM.Errors, Converter={StaticResource NullToBoolConverter}}" />
+                    <Entry Text="{Binding InstructorVM.Email}" Placeholder="Email" Keyboard="Email" />
+                    <Label Text="{Binding InstructorVM.Errors}" TextColor="Red" FontSize="12" IsVisible="{Binding InstructorVM.Errors, Converter={StaticResource NullToBoolConverter}}" />
                 </VerticalStackLayout>
             </Frame>
             
@@ -112,7 +112,7 @@
             <!-- Notes Section -->
             <VerticalStackLayout Spacing="10" Padding="10">
                 <Label Text="Notes:" FontAttributes="Bold" FontSize="16" />
-                <Editor Text="{Binding NewNote.Content, Mode=TwoWay}" Placeholder="Enter notes..." AutoSize="TextChanges" MinimumHeightRequest="100" />
+                <Editor Text="{Binding NotesVm.NewNote.Content, Mode=TwoWay}" Placeholder="Enter notes..." AutoSize="TextChanges" MinimumHeightRequest="100" />
                 <!-- Saved Notes -->
                 <Label Text="Saved Notes:" FontAttributes="Bold" FontSize="16" IsVisible="{Binding Notes.Count, Converter={StaticResource CountToBoolConverter}}" />
                 <HorizontalStackLayout Spacing="15" Margin="0,10,0,0" HorizontalOptions="Center"> <Button Text="Save Note" Command="{Binding SaveNoteCommand}" IsEnabled="{Binding NewNote.Content, Converter={StaticResource NullToBoolConverter}}" BackgroundColor="LightGreen" TextColor="White" CornerRadius="5" WidthRequest="140" />
@@ -120,7 +120,7 @@
                 </HorizontalStackLayout>
                 
                 <Frame Padding="0" Margin="0" IsVisible="{Binding Notes.Count, Converter={StaticResource CountToBoolConverter}}" HasShadow="False" BackgroundColor="Transparent" BorderColor="Transparent">
-                    <CollectionView ItemsSource="{Binding Notes}" Margin="0,5,0,0" EmptyView="No notes available" SelectionMode="None">
+                    <CollectionView ItemsSource="{Binding NotesVM.Notes}" Margin="0,5,0,0" EmptyView="No notes available" SelectionMode="None">
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="models:Note">
                                 <Grid ColumnSpacing="10">
