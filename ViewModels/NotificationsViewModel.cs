@@ -62,14 +62,14 @@ namespace MauiApp2.ViewModels
 
         private async Task ToggleCourseNotificationsAsync(Course course)
         {
-            if (course.StartNotification > 0)
+            if (course.startNotification > 0)
             {
                 await _notificationService.CancelNotificationAsync(course.CourseId + 1000);
-                course.StartNotification = 0;
+                course.startNotification = 0;
             }
             else
             {
-                course.StartNotification = 1;
+                course.startNotification = 1;
                 await _notificationService.ScheduleCourseNotificationsAsync(new[] { course });
             }
 
@@ -91,7 +91,7 @@ namespace MauiApp2.ViewModels
                 return;
             }
 
-            await _notificationService.ScheduleCourseNotificationsAsync(Courses.Where(c => c.StartNotification > 0 || c.EndNotification > 0));
+            await _notificationService.ScheduleCourseNotificationsAsync(Courses.Where(c => c.startNotification > 0 || c.endNotification > 0));
             await _notificationService.ScheduleAssessmentNotificationsAsync(Assessments.Where(a => a.StartNotification > 0 || a.EndNotification > 0));            
         }
     }

@@ -8,15 +8,18 @@ namespace MauiApp2
         {
             InitializeComponent();
 
-            var loginPage = MauiProgram.ServiceProvider.GetRequiredService<LoginPage>();
-            MainPage = new NavigationPage(loginPage);
-
+            MainPage = MauiProgram.ServiceProvider.GetRequiredService<AppShell>();
             Task.Run(async () =>
             {
                 try
                 {
                     var dbService = MauiProgram.ServiceProvider.GetRequiredService<IDatabaseService>();
                     await dbService.CreateTablesAsync();
+
+                    await MainThread.InvokeOnMainThreadAsync(async () =>
+                    {
+                        await Shell.Current.GoToAsync("//LoginPage");
+                    });
                 }
                 catch (Exception ex)
                 {

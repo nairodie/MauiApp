@@ -1,185 +1,194 @@
-﻿using MauiApp2.Interfaces;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using MauiApp2.Interfaces;
 using MauiApp2.Models;
-using MauiApp2.Services;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
 
-
 namespace MauiApp2.ViewModels
 {
-    public class CourseDetailViewModel : INotifyPropertyChanged
+    public partial class CourseDetailViewModel : BaseViewModel, IDisposable
     {
-        public event PropertyChangedEventHandler PropertyChanged;
+        private readonly INotificationService _notificationService;
+        private readonly IDatabaseService _databaseService;
         private readonly Func<Task>? _refreshCallback;
         private readonly Func<Task>? _refreshAssessments;
-        protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-
-        private readonly Interfaces.INotificationService _notificationService;
-        private readonly IDatabaseService _databaseService;
-        private bool _isSavingNote;
+        private Instructor? _previousInstructor;
+        private bool _disposed;
 
         public Term Term { get; }
+        public ObservableCollection<Assessment> Assessments { get; } = new();
+        public ObservableCollection<Note> Notes { get; set; } = new();
 
-        private Course _selectedCourse;
-        public Course SelectedCourse
-        {
-            get => _selectedCourse;
-            set
-            {
-                if (_selectedCourse != value)
-                {
-                    _selectedCourse = value;
-                    OnPropertyChanged(nameof(SelectedCourse));
-                }
-            }
-        }
-
-        private string _courseDetails;
-        public string CourseDetails
-        {
-            get => _courseDetails;
-            set
-            {
-                if (_courseDetails != value)
-                {
-                    _courseDetails = value;
-                    OnPropertyChanged(nameof(CourseDetails));
-                }
-            }
-        }
-
-        private string _startNotificationPreview;
-        public string StartNotificationPreview
-        {
-            get => _startNotificationPreview;
-            set
-            {
-                if (value != _startNotificationPreview)
-                {
-                    _startNotificationPreview = value;
-                    OnPropertyChanged(nameof(StartNotificationPreview));
-                }
-            }
-        }
-
-        private string _endNotificationPreview;
-        public string EndNotificationPreview
-        {
-            get => _endNotificationPreview;
-            set
-            {
-                if (value != _endNotificationPreview)
-                {
-                    _endNotificationPreview = value;
-                    OnPropertyChanged(nameof(EndNotificationPreview));
-                }
-            }
-        }
-
-        private string? _assessmentDueDateError;
-        public string? AssessmentDueDateError
-        {
-            get => _assessmentDueDateError;
-            set
-            {
-                if (value != _assessmentDueDateError)
-                {
-                    _assessmentDueDateError = value;
-                    OnPropertyChanged(nameof(AssessmentDueDateError));
-                }
-            }
-        }
-
-        private string? _assessmentEndDateError;
-        public string? AssessmentEndDateError
-        {
-            get => _assessmentEndDateError;
-            set
-            {
-                if (value != _assessmentEndDateError)
-                {
-                    _assessmentEndDateError = value;
-                    OnPropertyChanged(nameof(AssessmentEndDateError));
-                }
-            }
-        }
-
-
-        private string _startDateError;
-        public string? StartDateError
-        {
-            get => _startDateError;
-            set
-            {
-                if (!string.IsNullOrEmpty(value))
-                {
-                    _startDateError = value;
-                    OnPropertyChanged(nameof(StartDateError));
-                }
-            }
-        }
-
-        private string _endDateError;
-        public string? EndDateError
-        {
-            get => _endDateError;
-            set
-            {
-                if (!string.IsNullOrEmpty(value))
-                {
-                    _endDateError = value;
-                    OnPropertyChanged(nameof(EndDateError));
-                }
-            }
-        }
-        public bool IsDateRangeValid => string.IsNullOrEmpty(StartDateError) && string.IsNullOrEmpty(EndDateError);
-        public Instructor Instructor { get; }
-        public Assessment? PerformanceAssessment { get; set; }
-        public Assessment? ObjectiveAssessment { get; set; }
-        public ObservableCollection<Assessment> Assessments { get; }
-
-        public ObservableCollection<Note> Notes { get; set; } = new ObservableCollection<Note>();
         public List<int> NotificationValues { get; } = new() { 0, 1, 3, 5, 7, 14 };
+        public static List<string> StatusValues { get; } = new() { "In Progress", "Completed", "Dropped", "Plan to Take" };
 
-        public List<string> StatusValues { get; } = new List<string>
-        {
-            "In Progress", "Completed", "Dropped", "Plan to Take"
-        };
-        public string InstructorNameError { get; private set; }
-        public string InstructorPhoneError { get; private set; }
-        public string InstructorEmailError { get; private set; }
-        public bool IsInstructorValid => !string.IsNullOrWhiteSpace(Instructor?.Name) && !string.IsNullOrWhiteSpace(Instructor?.Phone) && !string.IsNullOrWhiteSpace(Instructor?.Email);
-        public ICommand SaveNoteCommand { get; }
-        public ICommand DeleteCourseCommand { get; }
-        public ICommand DeleteNote { get; }
-        public ICommand ToggleStartNotificationCommand { get; }
-        public ICommand ToggleEndNotificationCommand { get; }
-        public ICommand ScheduleStartAlertCommand { get; }
-        public ICommand ScheduleEndAlertCommand { get; }
-        public ICommand ShareNotesCommand { get; }
-        public ICommand ScheduleCourseAlertsCommand { get; }
-        public ICommand SaveCourseCommand { get; }
-        public ICommand SaveAssessmentCommand { get; }
-        public ICommand DeleteAssessmentCommand { get; }
-        public ICommand DeleteNoteCommand { get; }
-        public ICommand ClearAllNotificationsCommand { get; }
-        public ICommand AddNoteCommand => new Command(async () => await SaveNoteAsync());
+        [ObservableProperty]
+        private Course selectedCourse;
 
-        private Note _newNote = new Note();
-        public Note NewNote
+        [ObservableProperty]
+        private string courseDetails;
+
+        [ObservableProperty]
+        private string startNotificationPreview;
+
+        [ObservableProperty]
+        private string endNotificationPreview;
+
+        [ObservableProperty]
+        private string? assessmentDueDateError;
+
+        [ObservableProperty]
+        private string? assessmentEndDateError;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsDateRangeValid))]
+        private string? startDateError;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsDateRangeValid))]
+        private string? endDateError;
+        public bool IsDateRangeValid => string.IsNullOrEmpty(StartDateError) && string.IsNullOrEmpty(EndDateError);
+
+        [ObservableProperty]
+        private bool isSavingNote;
+
+        [ObservableProperty]
+        private Note newNote = new();
+
+        [ObservableProperty]
+        private Instructor instructor;
+
+        partial void OnInstructorChanged(Instructor value)
         {
-            get => _newNote;
-            set
+            if (value != null)
             {
-                _newNote = value;
-                OnPropertyChanged(nameof(NewNote));
+                value.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName == nameof(instructor.Name) || e.PropertyName == nameof(instructor.Phone) || e.PropertyName == nameof(instructor.Email))
+                    {
+                        ValidateInstructorFields();
+                    }
+                };
             }
         }
-        
+
+        [ObservableProperty]
+        private Assessment? performanceAssessment;
+
+        [ObservableProperty]
+        private Assessment? objectiveAssessment;
+
+        [ObservableProperty]
+        private string instructorNameError;
+
+        [ObservableProperty]
+        private string instructorPhoneError;
+
+        [ObservableProperty]
+        private string instructorEmailError;
+
+        public bool IsInstructorValid => !string.IsNullOrWhiteSpace(Instructor?.Name) && !string.IsNullOrWhiteSpace(Instructor?.Phone) && !string.IsNullOrWhiteSpace(Instructor?.Email);
+
+        [RelayCommand]
+        private async Task AddNote()
+        {
+            await SaveNoteAsync();
+        }
+
+        [RelayCommand]
+        private async Task SaveNote()
+        {
+            if (string.IsNullOrWhiteSpace(NewNote.Content))
+                return;
+
+            NewNote.CourseId = SelectedCourse.CourseId;
+            await _databaseService.NoteRepository.InsertAsync(NewNote);
+            Notes.Add(NewNote);
+            NewNote = new Note();
+
+            if (_refreshCallback != null)
+                await _refreshCallback();
+        }
+
+        [RelayCommand]
+        private async Task DeleteNote(Note note)
+        {
+            if (note == null) return;
+
+            await _databaseService.NoteRepository.DeleteNoteAsync(note);
+            Notes.Remove(note);
+        }
+
+        [RelayCommand]
+        private async Task DeleteCourse()
+        {
+            await _databaseService.CourseRepository.DeleteCourseAsync(SelectedCourse);
+
+            if (_refreshCallback != null)
+                await _refreshCallback();
+        }
+
+        [RelayCommand(CanExecute = nameof(CanSaveCourse))]
+        private async Task SaveCourse()
+        {
+            await _databaseService.CourseRepository.UpdateCourseAsync(SelectedCourse);
+            if (_refreshCallback != null)
+                await _refreshCallback();
+        }
+
+        private bool CanSaveCourse() => IsDateRangeValid && IsInstructorValid;
+
+        [RelayCommand]
+        private async Task SaveAssessment(Assessment assessment)
+        {
+            await _databaseService.AssessmentRepository.UpdateAssessment(assessment);
+
+            if (_refreshAssessments != null)
+                await _refreshAssessments();
+        }
+
+        [RelayCommand]
+        private async Task DeleteAssessment(Assessment assessment)
+        {
+            await _databaseService.AssessmentRepository.DeleteAssessment(assessment);
+            Assessments.Remove(assessment);
+        }
+
+        [RelayCommand(CanExecute = nameof(CanShareNotes))]
+        private async Task ShareNotes()
+        {
+            var allNotes = string.Join("\n\n", Notes.Where(n => !string.IsNullOrWhiteSpace(n.Content)).Select(n => n.Content));
+            await Share.RequestAsync(new ShareTextRequest
+            {
+                Title = "Course Notes",
+                Text = allNotes
+            });
+        }
+
+        private bool CanShareNotes() => Notes.Any(n => !string.IsNullOrWhiteSpace(n.Content));
+
+        [RelayCommand]
+        private async Task ScheduleCourseAlerts()
+        {
+            await SetBusyAsync(async () =>
+            {
+                await _notificationService.ScheduleCourseNotificationsAsync(SelectedCourse, Instructor);
+            });
+        }
+
+        [RelayCommand]
+        private async Task ClearAllNotifications()
+        {
+            await SetBusyAsync(async () =>
+            {
+                await _notificationService.CancelNotificationAsync();
+            });
+        }
+
         public CourseDetailViewModel(Course course, Term term, Instructor instructor, IEnumerable<Assessment> assessments, IEnumerable<Note> notes, IDatabaseService databaseService, Assessment? performanceAssessment, 
             Assessment? objectiveAssessment, Interfaces.INotificationService notifications, Func<Task>? refreshCallback, Func<Task>? refreshCourses = null, Func<Task>? refreshAssessments = null)
         {
@@ -188,31 +197,21 @@ namespace MauiApp2.ViewModels
             _refreshCallback = refreshCallback;
             _refreshAssessments = refreshAssessments;
 
-            SelectedCourse = course;
+            selectedCourse = course;
             Term = term;
-            Instructor = instructor;
+            instructor = instructor;
+            
 
-            if (instructor != null)
-            {
-                Instructor.PropertyChanged += (s, e) =>
-                {
-                    if (e.PropertyName == nameof(Instructor.Name) || e.PropertyName == nameof(Instructor.Phone) || e.PropertyName == nameof(Instructor.Email))
-                    {
-                        ValidateInstructorFields();
-                    }
-                };
-            }
-
-            CourseDetails = course.CourseDetails;
+            courseDetails = course.courseDetails;
 
             Assessments = new ObservableCollection<Assessment>(assessments);
             Notes = new ObservableCollection<Note>(notes);
-            NewNote = new Note();
+            newNote = new Note();
 
-            PerformanceAssessment = performanceAssessment;
-            ObjectiveAssessment = objectiveAssessment;
+            performanceAssessment = performanceAssessment;
+            objectiveAssessment = objectiveAssessment;
 
-            PerformanceAssessment ??= new Assessment
+            performanceAssessment ??= new Assessment
             {
                 Name = string.Empty,
                 Start = DateTime.Now.AddDays(1),
@@ -223,7 +222,7 @@ namespace MauiApp2.ViewModels
                 Type = performanceAssessment.Type
             };
 
-            ObjectiveAssessment ??= new Assessment
+            objectiveAssessment ??= new Assessment
             {
                 Name = string.Empty,
                 Start = DateTime.Now.AddDays(1),
@@ -235,8 +234,8 @@ namespace MauiApp2.ViewModels
             };
 
 
-            InitializeAssessmentDefaults(PerformanceAssessment);
-            InitializeAssessmentDefaults(ObjectiveAssessment);
+            InitializeAssessmentDefaults(performanceAssessment);
+            InitializeAssessmentDefaults(objectiveAssessment);
 
             Notes.CollectionChanged += OnNotesCollectionChanged;
 
@@ -251,9 +250,9 @@ namespace MauiApp2.ViewModels
             ScheduleCourseAlertsCommand = new Command(async () => await ScheduleCourseAlertsAsync());
             ClearAllNotificationsCommand = new Command(async () => await ClearAllNotificationsAsync());
 
-            SelectedCourse.PropertyChanged += (s, e) =>
+            selectedCourse.PropertyChanged += (s, e) =>
             {
-                if (e.PropertyName == nameof(SelectedCourse.Start) || e.PropertyName == nameof(SelectedCourse.End))
+                if (e.PropertyName == nameof(selectedCourse.start) || e.PropertyName == nameof(selectedCourse.end))
                 {
                     ValidateDateRange();
                 }
@@ -261,73 +260,73 @@ namespace MauiApp2.ViewModels
 
             ScheduleStartAlertCommand = new Command(async () =>
             {
-                if (SelectedCourse.Start > DateTime.Now)
+                if (selectedCourse.start > DateTime.Now)
                 {
-                    await _notificationService.ScheduleCourseNotificationsAsync(new[] { SelectedCourse });
+                    await _notificationService.ScheduleCourseNotificationsAsync(new[] { selectedCourse });
                 }
             });
 
             ScheduleEndAlertCommand = new Command(async () =>
             {
-                if (SelectedCourse.End > DateTime.Now)
+                if (selectedCourse.end > DateTime.Now)
                 {
-                    await _notificationService.ScheduleCourseNotificationsAsync(new[] { SelectedCourse });
+                    await _notificationService.ScheduleCourseNotificationsAsync(new[] { selectedCourse });
                 }
             });
 
             ToggleStartNotificationCommand = new Command(async () =>
             {
-                if (SelectedCourse.StartNotification > 0)
+                if (selectedCourse.startNotification > 0)
                 {
-                    await _notificationService.CancelNotificationAsync(SelectedCourse.CourseId + 1000);
-                    SelectedCourse.StartNotification = 0;
+                    await _notificationService.CancelNotificationAsync(selectedCourse.CourseId + 1000);
+                    selectedCourse.startNotification = 0;
                 }
                 else
                 {
-                    SelectedCourse.StartNotification = 1;
-                    await _notificationService.ScheduleCourseNotificationsAsync(new[] { SelectedCourse });
+                    selectedCourse.startNotification = 1;
+                    await _notificationService.ScheduleCourseNotificationsAsync(new[] { selectedCourse });
                 }
 
-                await _databaseService.CourseRepository.UpdateCourseAsync(SelectedCourse);
+                await _databaseService.CourseRepository.UpdateCourseAsync(selectedCourse);
             });
 
             ToggleEndNotificationCommand = new Command(async () =>
             {
-                if (SelectedCourse.EndNotification > 0)
+                if (selectedCourse.endNotification > 0)
                 {
-                    await _notificationService.CancelNotificationAsync(SelectedCourse.CourseId + 2000);
-                    SelectedCourse.EndNotification = 0;
+                    await _notificationService.CancelNotificationAsync(selectedCourse.CourseId + 2000);
+                    selectedCourse.endNotification = 0;
                 }
                 else
                 {
-                    SelectedCourse.EndNotification = 1;
-                    await _notificationService.ScheduleCourseNotificationsAsync(new[] { SelectedCourse });
+                    selectedCourse.endNotification = 1;
+                    await _notificationService.ScheduleCourseNotificationsAsync(new[] { selectedCourse });
                 }
 
-                await _databaseService.CourseRepository.UpdateCourseAsync(SelectedCourse);
+                await _databaseService.CourseRepository.UpdateCourseAsync(selectedCourse);
             });
 
-            SelectedCourse.PropertyChanged += async (s, e) =>
+            selectedCourse.PropertyChanged += async (s, e) =>
             {
                 try
                 {
-                    if (e.PropertyName == nameof(SelectedCourse.StartNotification) &&
-                        CanScheduleNotification(SelectedCourse.Start, SelectedCourse.StartNotification, SelectedCourse.CourseId, "Start"))
+                    if (e.PropertyName == nameof(selectedCourse.startNotification) &&
+                        CanScheduleNotification(selectedCourse.start, selectedCourse.startNotification, selectedCourse.CourseId, "Start"))
                     {
-                        await _notificationService.ScheduleCourseNotificationsAsync(new[] { SelectedCourse });
-                        await _databaseService.CourseRepository.UpdateCourseAsync(SelectedCourse);
+                        await _notificationService.ScheduleCourseNotificationsAsync(new[] { selectedCourse });
+                        await _databaseService.CourseRepository.UpdateCourseAsync(selectedCourse);
                         await ShowNotificationToastAsync("Start notification scheduled.");
                     }
 
-                    if (e.PropertyName == nameof(SelectedCourse.EndNotification) &&
-                        CanScheduleNotification(SelectedCourse.End, SelectedCourse.EndNotification, SelectedCourse.CourseId, "End"))
+                    if (e.PropertyName == nameof(selectedCourse.endNotification) &&
+                        CanScheduleNotification(selectedCourse.end, selectedCourse.endNotification, selectedCourse.CourseId, "End"))
                     {
-                        await _notificationService.ScheduleCourseNotificationsAsync(new[] { SelectedCourse });
-                        await _databaseService.CourseRepository.UpdateCourseAsync(SelectedCourse);
+                        await _notificationService.ScheduleCourseNotificationsAsync(new[] { selectedCourse });
+                        await _databaseService.CourseRepository.UpdateCourseAsync(selectedCourse);
                         await ShowNotificationToastAsync("End notification scheduled.");
                     }
 
-                    if (e.PropertyName == nameof(SelectedCourse.Start) || e.PropertyName == nameof(SelectedCourse.End))
+                    if (e.PropertyName == nameof(selectedCourse.start) || e.PropertyName == nameof(selectedCourse.end))
                     {
                         OnPropertyChanged(nameof(IsDateRangeValid));
                         (SaveCourseCommand as Command)?.ChangeCanExecute();
@@ -338,8 +337,8 @@ namespace MauiApp2.ViewModels
                     Debug.WriteLine($"[Notification Error] {ex.Message}");
                 }
             };
-            SubscribeToAssessmentNotifications(PerformanceAssessment, "Performance assessment");
-            SubscribeToAssessmentNotifications(ObjectiveAssessment, "Objective assessment");
+            SubscribeToAssessmentNotifications(performanceAssessment, "Performance assessment");
+            SubscribeToAssessmentNotifications(objectiveAssessment, "Objective assessment");
             UpdateStartNotificationPreview();
             UpdateEndNotificationPreview();
 
@@ -386,7 +385,7 @@ namespace MauiApp2.ViewModels
                 }
 
                 var allNotes = string.Join("\n\n", validNotes);
-                var courseName = SelectedCourse?.CourseName ?? "Current Course";
+                var courseName = selectedCourse?.courseName ?? "Current Course";
 
                 await Share.Default.RequestAsync(new ShareTextRequest
                 {
@@ -422,17 +421,17 @@ namespace MauiApp2.ViewModels
                 return;
             }
 
-            SelectedCourse.CourseDetails = CourseDetails;
-            await _databaseService.CourseRepository.UpdateCourseAsync(SelectedCourse);
+            selectedCourse.courseDetails = courseDetails;
+            await _databaseService.CourseRepository.UpdateCourseAsync(selectedCourse);
 
-            if (Instructor != null)
-                await _databaseService.InstructorRepository.UpdateInstructor(Instructor);
+            if (instructor != null)
+                await _databaseService.InstructorRepository.UpdateInstructor(instructor);
 
-            if (PerformanceAssessment != null)
-                await _databaseService.AssessmentRepository.UpdateAssessment(PerformanceAssessment);
+            if (performanceAssessment != null)
+                await _databaseService.AssessmentRepository.UpdateAssessment(performanceAssessment);
 
-            if (ObjectiveAssessment != null)
-                await _databaseService.AssessmentRepository.UpdateAssessment(ObjectiveAssessment);
+            if (objectiveAssessment != null)
+                await _databaseService.AssessmentRepository.UpdateAssessment(objectiveAssessment);
 
             await Application.Current.MainPage.DisplayAlert("Saved", "Course details saved.", "OK");
 
@@ -475,26 +474,26 @@ namespace MauiApp2.ViewModels
 
         private async Task DeleteCourseAsync()
         {
-            if (SelectedCourse == null)
+            if (selectedCourse == null)
                 return;
 
-            bool confirm = await Application.Current.MainPage.DisplayAlert( "Delete Course", $"Are you sure you want to delete '{SelectedCourse.CourseName}'?", "Delete", "Cancel");
+            bool confirm = await Application.Current.MainPage.DisplayAlert( "Delete Course", $"Are you sure you want to delete '{selectedCourse.courseName}'?", "Delete", "Cancel");
 
             if (!confirm)
                 return;
 
             // Delete assessments
-            var assessments = await _databaseService.AssessmentRepository.GetAssessmentsByCourseAsync(SelectedCourse.CourseId);
+            var assessments = await _databaseService.AssessmentRepository.GetAssessmentsByCourseAsync(selectedCourse.CourseId);
             foreach (var a in assessments)
                 await _databaseService.AssessmentRepository.DeleteAssessment(a);
 
             // Delete notes
-            var notes = await _databaseService.NoteRepository.GetNotesByCourseAsync(SelectedCourse.CourseId);
+            var notes = await _databaseService.NoteRepository.GetNotesByCourseAsync(selectedCourse.CourseId);
             foreach (var n in notes)
                 await _databaseService.NoteRepository.DeleteNoteAsync(n);
 
             // Delete course
-            await _databaseService.CourseRepository.DeleteCourseAsync(SelectedCourse);
+            await _databaseService.CourseRepository.DeleteCourseAsync(selectedCourse);
 
             // Callback to refresh (MainViewModel)
             if (_refreshCallback is not null)
@@ -508,7 +507,7 @@ namespace MauiApp2.ViewModels
         {
             if (await _notificationService.EnsureNotificationPermissionAsync())
             {
-                await _notificationService.ScheduleCourseNotificationsAsync(new[] { SelectedCourse });
+                await _notificationService.ScheduleCourseNotificationsAsync(new[] { selectedCourse });
                 await _notificationService.ScheduleAssessmentNotificationsAsync(Assessments);
             }
         }
@@ -516,36 +515,36 @@ namespace MauiApp2.ViewModels
         private async Task ClearAllNotificationsAsync()
         { 
             //clear notifications
-            SelectedCourse.StartNotification = 0;
-            SelectedCourse.EndNotification = 0;
+            selectedCourse.startNotification = 0;
+            selectedCourse.endNotification = 0;
             
-            await _notificationService.CancelNotificationAsync(SelectedCourse.CourseId + 1000);
-            await _notificationService.CancelNotificationAsync(SelectedCourse.CourseId + 2000);
+            await _notificationService.CancelNotificationAsync(selectedCourse.CourseId + 1000);
+            await _notificationService.CancelNotificationAsync(selectedCourse.CourseId + 2000);
 
-            await _databaseService.CourseRepository.UpdateCourseAsync(SelectedCourse);
+            await _databaseService.CourseRepository.UpdateCourseAsync(selectedCourse);
 
             //clear perf assessments
-            if (PerformanceAssessment != null)
+            if (performanceAssessment != null)
             {
-                PerformanceAssessment.StartNotification = 0;
-                PerformanceAssessment.EndNotification = 0;
+                performanceAssessment.StartNotification = 0;
+                performanceAssessment.EndNotification = 0;
 
-                await _notificationService.CancelNotificationAsync(PerformanceAssessment.AssessmentId + 3000);
-                await _notificationService.CancelNotificationAsync(PerformanceAssessment.AssessmentId + 4000);
+                await _notificationService.CancelNotificationAsync(performanceAssessment.AssessmentId + 3000);
+                await _notificationService.CancelNotificationAsync(performanceAssessment.AssessmentId + 4000);
 
-                await _databaseService.AssessmentRepository.UpdateAssessment(PerformanceAssessment);
+                await _databaseService.AssessmentRepository.UpdateAssessment(performanceAssessment);
             }
 
             //clear OBJ assessments
-            if (ObjectiveAssessment != null)
+            if (objectiveAssessment != null)
             {
-                ObjectiveAssessment.StartNotification = 0;
-                ObjectiveAssessment.EndNotification = 0;
+                objectiveAssessment.StartNotification = 0;
+                objectiveAssessment.EndNotification = 0;
 
-                await _notificationService.CancelNotificationAsync(ObjectiveAssessment.AssessmentId + 3000);
-                await _notificationService.CancelNotificationAsync(ObjectiveAssessment.AssessmentId + 4000);
+                await _notificationService.CancelNotificationAsync(objectiveAssessment.AssessmentId + 3000);
+                await _notificationService.CancelNotificationAsync(objectiveAssessment.AssessmentId + 4000);
 
-                await _databaseService.AssessmentRepository.UpdateAssessment(ObjectiveAssessment);
+                await _databaseService.AssessmentRepository.UpdateAssessment(objectiveAssessment);
             }           
             // toast
             await ShowNotificationToastAsync("All notifications have been cleared.");
@@ -553,10 +552,10 @@ namespace MauiApp2.ViewModels
 
         private async Task SaveNoteAsync()
         {
-            if (_isSavingNote || string.IsNullOrWhiteSpace(NewNote?.Content))
+            if (isSavingNote || string.IsNullOrWhiteSpace(newNote?.Content))
                 return;
 
-            if (_databaseService?.NoteRepository == null || SelectedCourse == null)
+            if (_databaseService?.NoteRepository == null || selectedCourse == null)
             {
                 await Application.Current.MainPage.DisplayAlert("Error", "Missing course or database service.", "OK");
                 return;
@@ -564,8 +563,8 @@ namespace MauiApp2.ViewModels
 
             try
             {
-                _isSavingNote = true;
-                string trimmedContent = NewNote.Content.Trim();
+                isSavingNote = true;
+                string trimmedContent = newNote.Content.Trim();
                 bool isDuplicate = Notes.Any(n => string.Equals(n.Content?.Trim(), trimmedContent, StringComparison.OrdinalIgnoreCase));
 
                 if (isDuplicate)
@@ -576,20 +575,20 @@ namespace MauiApp2.ViewModels
 
                 var note = new Note
                 {
-                    CourseId = SelectedCourse.CourseId,
-                    Content = NewNote.Content.Trim()
+                    CourseId = selectedCourse.CourseId,
+                    Content = newNote.Content.Trim()
                 };
 
                 await _databaseService.NoteRepository.InsertAsync(note);
 
-                var savedNotes = await _databaseService.NoteRepository.GetNotesByCourseAsync(SelectedCourse.CourseId);
+                var savedNotes = await _databaseService.NoteRepository.GetNotesByCourseAsync(selectedCourse.CourseId);
                 Notes.Clear();
                 foreach (var n in savedNotes)
                 {
                     Notes.Add(n);
                 }
 
-                NewNote = new Note();
+                newNote = new Note();
                 await Application.Current.MainPage.DisplayAlert("Success", "Note saved.", "OK");
             }
             catch (Exception ex)
@@ -598,22 +597,22 @@ namespace MauiApp2.ViewModels
             }
             finally
             {
-                _isSavingNote = false;
+                isSavingNote = false;
             }
         }
 
         private void ValidateInstructorFields()
         {
-            if (Instructor == null)
+            if (instructor == null)
                 return;
 
-            InstructorNameError = string.IsNullOrWhiteSpace(Instructor?.Name) ? "Name is required" : null;
-            InstructorPhoneError = string.IsNullOrWhiteSpace(Instructor?.Phone) ? "Phone is required" : null;
-            InstructorEmailError = string.IsNullOrWhiteSpace(Instructor?.Email)
-                ? "Email is required" : (!Regex.IsMatch(Instructor.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$") ? "Invalid email format" : null);
+            instructorNameError = string.IsNullOrWhiteSpace(instructor?.Name) ? "Name is required" : null;
+            instructorPhoneError = string.IsNullOrWhiteSpace(instructor?.Phone) ? "Phone is required" : null;
+            InstructorEmailError = string.IsNullOrWhiteSpace(instructor?.Email)
+                ? "Email is required" : (!Regex.IsMatch(instructor.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$") ? "Invalid email format" : null);
 
-            OnPropertyChanged(nameof(InstructorNameError));
-            OnPropertyChanged(nameof(InstructorPhoneError));
+            OnPropertyChanged(nameof(instructorNameError));
+            OnPropertyChanged(nameof(instructorPhoneError));
             OnPropertyChanged(nameof(InstructorEmailError));
             OnPropertyChanged(nameof(IsInstructorValid));
 
@@ -622,26 +621,26 @@ namespace MauiApp2.ViewModels
 
         private void UpdateStartNotificationPreview()
         {
-            if (SelectedCourse.Start != default && SelectedCourse.StartNotification > 0)
+            if (selectedCourse.start != default && selectedCourse.startNotification > 0)
             {
-                var notifyTime = SelectedCourse.Start.AddDays(-SelectedCourse.StartNotification);
-                StartNotificationPreview = $"This will notify on {notifyTime:MMMM dd, yyyy} at {notifyTime:hh:mm tt}";
+                var notifyTime = selectedCourse.start.AddDays(-selectedCourse.startNotification);
+                startNotificationPreview = $"This will notify on {notifyTime:MMMM dd, yyyy} at {notifyTime:hh:mm tt}";
             }
             else
             {
-                StartNotificationPreview = string.Empty;
+                startNotificationPreview = string.Empty;
             }
         }
         private void UpdateEndNotificationPreview()
         {
-            if (SelectedCourse.End != default && SelectedCourse.EndNotification > 0)
+            if (selectedCourse.end != default && selectedCourse.endNotification > 0)
             {
-                var notifyTime = SelectedCourse.End.AddDays(-SelectedCourse.EndNotification);
-                EndNotificationPreview = $"This will notify on {notifyTime:MMMM dd, yyyy} at {notifyTime:hh:mm tt}";
+                var notifyTime = selectedCourse.end.AddDays(-selectedCourse.endNotification);
+                endNotificationPreview = $"This will notify on {notifyTime:MMMM dd, yyyy} at {notifyTime:hh:mm tt}";
             }
             else
             {
-                EndNotificationPreview = string.Empty;
+                endNotificationPreview = string.Empty;
             }
         }
 
@@ -744,25 +743,25 @@ namespace MauiApp2.ViewModels
 
         private void ValidateDateRange()
         {
-            var (startError, endError) = DateValidationHelper.GetValidationErrors(SelectedCourse.Start, SelectedCourse.End);
-            StartDateError = startError;
-            EndDateError = endError;
+            var (startError, endError) = DateValidationHelper.GetValidationErrors(selectedCourse.start, selectedCourse.end);
+            startDateError = startError;
+            endDateError = endError;
 
-            OnPropertyChanged(nameof(StartDateError));
-            OnPropertyChanged(nameof(EndDateError));
+            OnPropertyChanged(nameof(startDateError));
+            OnPropertyChanged(nameof(endDateError));
             OnPropertyChanged(nameof(IsDateRangeValid));
             (SaveCourseCommand as Command)?.ChangeCanExecute();
         }
 
         private void ValidateCourseDates()
         {
-            var (startError, endError) = DateValidationHelper.GetValidationErrors(SelectedCourse.Start, SelectedCourse.End);
+            var (startError, endError) = DateValidationHelper.GetValidationErrors(selectedCourse.start, selectedCourse.end);
 
-            StartDateError = startError;
-            EndDateError = endError;
+            startDateError = startError;
+            endDateError = endError;
 
-            OnPropertyChanged(nameof(StartDateError));
-            OnPropertyChanged(nameof(EndDateError));
+            OnPropertyChanged(nameof(startDateError));
+            OnPropertyChanged(nameof(endDateError));
             OnPropertyChanged(nameof(IsDateRangeValid));
             (SaveCourseCommand as Command)?.ChangeCanExecute();
         }
@@ -770,17 +769,17 @@ namespace MauiApp2.ViewModels
         private void ValidateAssessmentDates(Assessment assessment)
         {
             if (assessment.DueDate < assessment.Start)
-                AssessmentDueDateError = "Due date cannot be before the start date.";
+                assessmentDueDateError = "Due date cannot be before the start date.";
             else
-                AssessmentDueDateError = null;
+                assessmentDueDateError = null;
 
             if (assessment.End < assessment.Start)
-                AssessmentEndDateError = "End date cannot be before the start date.";
+                assessmentEndDateError = "End date cannot be before the start date.";
             else
-                AssessmentEndDateError = null;
+                assessmentEndDateError = null;
 
-            OnPropertyChanged(nameof(AssessmentDueDateError));
-            OnPropertyChanged(nameof(AssessmentEndDateError));
+            OnPropertyChanged(nameof(assessmentDueDateError));
+            OnPropertyChanged(nameof(assessmentEndDateError));
         }
 
     }

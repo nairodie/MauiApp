@@ -41,13 +41,13 @@ namespace MauiApp2.Repositories
             {
                 TermId = termId,
                 InstructorId = 1,
-                CourseName = "NewCourse101",
-                Start = DateTime.Now,
-                End = DateTime.Now.AddMonths(4),
-                Status = "Plan to Take",
-                CourseDetails = "Enter Course Details Here:",
-                PerformanceAssessmentId = 0,
-                ObjectiveAssessmentId = 0
+                courseName = "NewCourse101",
+                start = DateTime.Now,
+                end = DateTime.Now.AddMonths(4),
+                status = "Plan to Take",
+                courseDetails = "Enter Course Details Here:",
+                performanceAssessmentId = 0,
+                objectiveAssessmentId = 0
             };
 
             await _db.InsertAsync(newCourse);
@@ -77,8 +77,8 @@ namespace MauiApp2.Repositories
             await _db.InsertAsync(oa);
             oa.AssessmentId = await _db.ExecuteScalarAsync<int>("SELECT last_insert_rowid()");
 
-            newCourse.PerformanceAssessmentId = pa.AssessmentId;
-            newCourse.ObjectiveAssessmentId = oa.AssessmentId;
+            newCourse.performanceAssessmentId = pa.AssessmentId;
+            newCourse.objectiveAssessmentId = oa.AssessmentId;
 
             await _db.UpdateAsync(newCourse);
 

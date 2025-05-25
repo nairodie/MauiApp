@@ -127,11 +127,11 @@ namespace MauiApp2.Services
                 {
                     TermId = term.TermId,
                     InstructorId = instructor.InstructorId,
-                    CourseName = courseName,
-                    Start = now,
-                    End = now.AddMonths(6),
-                    Status = status,
-                    CourseDetails = "Enter Course Details Here:"
+                    courseName = courseName,
+                    start = now,
+                    end = now.AddMonths(6),
+                    status = status,
+                    courseDetails = "Enter Course Details Here:"
                 };
 
                 //get courseid
@@ -160,8 +160,8 @@ namespace MauiApp2.Services
                 };
                 await _assessmentRepository.InsertAsync(oa);
 
-                course.PerformanceAssessmentId = pa.AssessmentId;
-                course.ObjectiveAssessmentId = oa.AssessmentId;
+                course.performanceAssessmentId = pa.AssessmentId;
+                course.objectiveAssessmentId = oa.AssessmentId;
                 await _courseRepository.UpdateCourseAsync(course);
 
                 allCourses.Add(course);
@@ -181,7 +181,7 @@ namespace MauiApp2.Services
 
             foreach (var course in courses)
             {
-                if (course.PerformanceAssessmentId > 0)
+                if (course.performanceAssessmentId > 0)
                 {
                     var assessment = new Assessment
                     {
@@ -195,7 +195,7 @@ namespace MauiApp2.Services
                     assessments.Add(assessment);
                 }
 
-                if (course.ObjectiveAssessmentId > 0)
+                if (course.objectiveAssessmentId > 0)
                 {
                     var assessment = new Assessment
                     {
@@ -236,7 +236,7 @@ namespace MauiApp2.Services
                     var note = new Note
                     {
                         CourseId = course.CourseId,
-                        Content = $"Sample note {i} for {course.CourseName}"
+                        Content = $"Sample note {i} for {course.courseName}"
                     };
                     notes.Add(note);
                 }

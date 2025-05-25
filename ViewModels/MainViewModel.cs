@@ -249,13 +249,13 @@ namespace MauiApp2.ViewModels
             {
                 TermId = SelectedTerm.TermId,
                 InstructorId = instructorId,
-                CourseName = name.Trim(),
-                Start = SelectedTerm.Start,
-                End = SelectedTerm.Start.AddMonths(3),
-                Status = "Plan to Take",
-                CourseDetails = "Enter course details...",
-                PerformanceAssessmentId = 0,
-                ObjectiveAssessmentId = 0
+                courseName = name.Trim(),
+                start = SelectedTerm.Start,
+                end = SelectedTerm.Start.AddMonths(3),
+                status = "Plan to Take",
+                courseDetails = "Enter course details...",
+                performanceAssessmentId = 0,
+                objectiveAssessmentId = 0
             };
 
             await _databaseService.CourseRepository.AddCourseAsync(newCourse);
@@ -292,8 +292,8 @@ namespace MauiApp2.ViewModels
             await _databaseService.AssessmentRepository.InsertAsync(objective);
             objective.AssessmentId = await _databaseService.AssessmentRepository.GetLastInsertedAssessmentIdAsync();
 
-            insertedCourse.PerformanceAssessmentId = performance.AssessmentId;
-            insertedCourse.ObjectiveAssessmentId = objective.AssessmentId;
+            insertedCourse.performanceAssessmentId = performance.AssessmentId;
+            insertedCourse.objectiveAssessmentId = objective.AssessmentId;
 
             await _databaseService.CourseRepository.UpdateCourseAsync(insertedCourse);
 
@@ -372,8 +372,8 @@ namespace MauiApp2.ViewModels
 
             foreach (var course in courses)
             {
-                course.Start = SelectedTerm.Start;
-                course.End = SelectedTerm.End;
+                course.start = SelectedTerm.Start;
+                course.end = SelectedTerm.End;
                 await _databaseService.CourseRepository.UpdateCourseAsync(course);
             }
             await LoadTermData(SelectedTerm.TermId).ConfigureAwait(false);
@@ -561,8 +561,8 @@ namespace MauiApp2.ViewModels
                 var instructor = instructorTask.Result;
                 var assessments = assessmentsTask.Result;
                 var notes = notesTask.Result;
-                var performance = assessments.FirstOrDefault(a => a.AssessmentId == freshCourse.PerformanceAssessmentId);
-                var objective = assessments.FirstOrDefault(a => a.AssessmentId == freshCourse.ObjectiveAssessmentId);
+                var performance = assessments.FirstOrDefault(a => a.AssessmentId == freshCourse.performanceAssessmentId);
+                var objective = assessments.FirstOrDefault(a => a.AssessmentId == freshCourse.objectiveAssessmentId);
 
                 var viewModel = new CourseDetailViewModel(course: freshCourse, term: SelectedTerm, instructor: instructor, assessments: assessments, notes: notes, performanceAssessment: performance, objectiveAssessment: objective,
                     databaseService: _databaseService, notifications: _notifications, refreshCallback: async () => await LoadTermData(SelectedTerm.TermId), refreshAssessments: RefreshAssessmentsAsync);

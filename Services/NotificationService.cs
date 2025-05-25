@@ -48,10 +48,10 @@ namespace MauiApp2.Services
             {
                 NotificationId = course.CourseId + 1000,
                 Title = "Course Starting Reminder",
-                Description = $"{course.CourseName} Starting soon",
+                Description = $"{course.courseName} Starting soon",
                 Schedule = new NotificationRequestSchedule
                 {
-                    NotifyTime = CalculateNotificationTime(course.Start, course.StartNotification),
+                    NotifyTime = CalculateNotificationTime(course.start, course.startNotification),
                     RepeatType = NotificationRepeat.Daily
                 }
             };
@@ -63,10 +63,10 @@ namespace MauiApp2.Services
             {
                 NotificationId = course.CourseId + 2000,
                 Title = "Course Ending Reminder",
-                Description = $"{course.CourseName} Ending soon",
+                Description = $"{course.courseName} Ending soon",
                 Schedule = new NotificationRequestSchedule
                 {
-                    NotifyTime = CalculateNotificationTime(course.End, course.EndNotification),
+                    NotifyTime = CalculateNotificationTime(course.end, course.endNotification),
                     RepeatType = NotificationRepeat.Daily
                 }
             };
@@ -77,17 +77,17 @@ namespace MauiApp2.Services
             yield return CreateNotification(
                 id: course.CourseId + 1000,
                 title: "Course Starting Reminder",
-                description: $"{course.CourseName} is starting soon",
-                eventDate: course.Start,
-                daysBefore: course.StartNotification
+                description: $"{course.courseName} is starting soon",
+                eventDate: course.start,
+                daysBefore: course.startNotification
             );
 
             yield return CreateNotification(
                 id: course.CourseId + 2000,
                 title: "Course Ending Reminder",
-                description: $"{course.CourseName} is ending soon",
-                eventDate: course.End,
-                daysBefore: course.EndNotification
+                description: $"{course.courseName} is ending soon",
+                eventDate: course.end,
+                daysBefore: course.endNotification
             );
         }
 
@@ -149,5 +149,55 @@ namespace MauiApp2.Services
                 }
             }
         }
+
+        public async Task ScheduleCourseNotificationsAsync(Course course, Instructor instructor)
+        {
+            if (!await EnsureNotificationPermissionAsync()) return;
+
+            var requests = CreateCourseNotifications(course, instructor)
+                .Where(r => r != null)
+                .ToList();
+
+            await ProcessNotificationRequestsAsync(requests!);
+        }
+
+        private IEnumerable<NotificationRequest> CreateCourseNotifications(Course course, Instructor instructor)
+        {
+            var notifications = new List<NotificationRequest>();
+
+            if (course.startNotification && course.StartDate > DateTime.Now)
+            {
+                notifications.Add(new NotificationRequest
+                {
+                    NotificationId = course.Id * 10 + 1,
+                    Title = "Course Start",
+                    Description = $"{course.Title} starts on {course.StartDate:d}. Contact: {instructor.Name}",
+                    Schedule = new NotificationRequestSchedule
+                    {
+                        NotifyTime = course.StartDate,
+                        RepeatType = NotificationRepeat.No
+                    }
+                });
+            }
+
+            if (course.NotifyEnd && course.EndDate > DateTime.Now)
+            {
+                notifications.Add(new NotificationRequest
+                {
+                    NotificationId = course.Id * 10 + 2,
+                    Title = "Course End",
+                    Description = $"{course.Title} ends on {course.EndDate:d}. Contact: {instructor.Name}",
+                    Schedule = new NotificationRequestSchedule
+                    {
+                        NotifyTime = course.EndDate,
+                        RepeatType = NotificationRepeat.No
+                    }
+                });
+            }
+
+            return notifications;
+        }
+
+
     }
 }

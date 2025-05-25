@@ -1,11 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MauiApp2.Interfaces;
-using System.Threading.Tasks;
 
 namespace MauiApp2.ViewModels;
 
-public partial class LoginViewModel : ObservableObject
+public partial class LoginViewModel : BaseViewModel
 {
     private readonly IAuthService _authService;
 
@@ -26,15 +25,15 @@ public partial class LoginViewModel : ObservableObject
     [RelayCommand]
     private async Task Login()
     {
-        loginError = string.Empty;
+        LoginError = string.Empty;
 
-        if (await _authService.LoginAsync(Username, password))
+        if (await _authService.LoginAsync(Username, Password))
         {
-            await Application.Current.MainPage.Navigation.PushAsync(MauiProgram.ServiceProvider.GetRequiredService<MainPage>());
+            await Shell.Current.GoToAsync("//MainPage");
         }
         else
         {
-            loginError = "Invalid username or password";
+            LoginError = "Invalid username or password.";
         }
     }
 }

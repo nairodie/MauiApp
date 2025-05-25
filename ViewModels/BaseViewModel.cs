@@ -1,25 +1,33 @@
-﻿using System.ComponentModel;
-using System.Runtime.CompilerServices;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MauiApp2.ViewModels
 {
-    public class BaseViewModel : INotifyPropertyChanged
+    public partial class BaseViewModel : ObservableObject
     {
-        public event PropertyChangedEventHandler PropertyChanged;
+        [ObservableProperty]
+        private bool isBusy;
 
-        protected bool SetProperty<T>(ref T backingStore, T value, [CallerMemberName] string propertyName = "")
+        [ObservableProperty]
+        private string? title;
+
+        protected async Task SetBusyAsync(Func<Task> action, [System.Runtime.CompilerServices.CallerMemberName] string? caller = null)
         {
-            if (EqualityComparer<T>.Default.Equals(backingStore, value)) return false;
+            if (IsBusy)
+                return;
 
-            backingStore = value;
-            OnPropertyChanged(propertyName);
-            return true;
-        }
-
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            try
+            {
+                IsBusy = true;
+                await action();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Busy Error in {caller}] {ex.Message}");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
     }
-
 }

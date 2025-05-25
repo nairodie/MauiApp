@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Adria\\source\\repos\\nairodie\\MauiApp\\MauiApp2.csproj": {}
+    "C:\\Users\\Adria\\Source\\Repos\\nairodie\\MauiApp\\MauiApp2.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Adria\\source\\repos\\nairodie\\MauiApp\\MauiApp2.csproj": {
+    "C:\\Users\\Adria\\Source\\Repos\\nairodie\\MauiApp\\MauiApp2.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Adria\\source\\repos\\nairodie\\MauiApp\\MauiApp2.csproj",
+        "projectUniqueName": "C:\\Users\\Adria\\Source\\Repos\\nairodie\\MauiApp\\MauiApp2.csproj",
         "projectName": "MauiApp2",
-        "projectPath": "C:\\Users\\Adria\\source\\repos\\nairodie\\MauiApp\\MauiApp2.csproj",
+        "projectPath": "C:\\Users\\Adria\\Source\\Repos\\nairodie\\MauiApp\\MauiApp2.csproj",
         "packagesPath": "C:\\Users\\Adria\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Adria\\source\\repos\\nairodie\\MauiApp\\obj\\",
+        "outputPath": "C:\\Users\\Adria\\Source\\Repos\\nairodie\\MauiApp\\obj\\",
         "projectStyle": "PackageReference",
         "crossTargeting": true,
         "fallbackFolders": [
